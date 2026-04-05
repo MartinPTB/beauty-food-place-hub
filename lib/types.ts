@@ -24,6 +24,8 @@ export type FoodItem = {
   style: string;
   notes: string[];
   image_url: string | null;
+  google_maps_url: string | null;
+  google_place_id: string | null;
 };
 
 export type PlaceItem = {
@@ -38,4 +40,6 @@ export type PlaceItem = {
   category: string;
   notes: string[];
   image_url: string | null;
+  google_maps_url: string | null;
+  google_place_id: string | null;
 };

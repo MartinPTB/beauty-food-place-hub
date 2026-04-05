@@ -1,10 +1,7 @@
 "use client";
 
 import { FilterShell } from "@/components/filter-shell";
-import {
-  createMapDirectionsUrl,
-  createMapSearchUrl,
-} from "@/lib/maps";
+import { getDirectionsUrl, getViewMapUrl } from "@/lib/maps";
 import { PlaceItem } from "@/lib/types";
 
 export function PlaceList({ items }: { items: PlaceItem[] }) {
@@ -17,7 +14,16 @@ export function PlaceList({ items }: { items: PlaceItem[] }) {
       priceKey="price_level"
       renderItem={(item) => (
         <article key={item.id} className="rounded-3xl bg-white p-5 shadow-sm">
-          <div className="mb-4 h-40 rounded-2xl bg-slate-100" />
+          {item.image_url ? (
+            <img
+              src={item.image_url}
+              alt={item.name}
+              className="mb-4 h-40 w-full rounded-2xl object-cover"
+            />
+          ) : (
+            <div className="mb-4 h-40 rounded-2xl bg-slate-100" />
+          )}
+
           <h2 className="text-lg font-semibold">{item.name}</h2>
           <p className="mt-1 text-sm text-slate-500">
             {item.city}｜{item.district}
@@ -43,7 +49,7 @@ export function PlaceList({ items }: { items: PlaceItem[] }) {
 
           <div className="mt-5 grid gap-2 sm:grid-cols-2">
             <a
-              href={createMapSearchUrl(item.address)}
+              href={getViewMapUrl(item)}
               target="_blank"
               rel="noreferrer"
               className="rounded-2xl border border-slate-200 px-4 py-2.5 text-center text-sm font-medium"
@@ -51,7 +57,7 @@ export function PlaceList({ items }: { items: PlaceItem[] }) {
               查看地圖
             </a>
             <a
-              href={createMapDirectionsUrl(item.address)}
+              href={getDirectionsUrl(item)}
               target="_blank"
               rel="noreferrer"
               className="rounded-2xl bg-slate-900 px-4 py-2.5 text-center text-sm font-medium text-white"

@@ -12,7 +12,16 @@ export function BeautyList({ items }: { items: BeautyItem[] }) {
       priceKey="price_level"
       renderItem={(item) => (
         <article key={item.id} className="rounded-3xl bg-white p-5 shadow-sm">
-          <div className="mb-4 h-40 rounded-2xl bg-slate-100" />
+          {item.image_url ? (
+            <img
+              src={item.image_url}
+              alt={item.name}
+              className="mb-4 h-40 w-full rounded-2xl object-cover"
+            />
+          ) : (
+            <div className="mb-4 h-40 rounded-2xl bg-slate-100" />
+          )}
+
           <h2 className="text-lg font-semibold">{item.name}</h2>
           <p className="mt-1 text-sm text-slate-500">{item.brand}</p>
 
