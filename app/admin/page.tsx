@@ -1,565 +1,607 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { CSSProperties, useMemo, useState } from "react";
+import BeautyPartSelector, {
+  type BeautyPart,
+} from "@/components/BeautyPartSelector";
+import BrandInput from "@/components/BrandInput";
+import BusinessHoursEditor from "@/components/BusinessHoursEditor";
+import CityDistrictSelector from "@/components/CityDistrictSelector";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
+import {
+  BusinessHours,
+  EMPTY_BUSINESS_HOURS,
+  formatBusinessHours,
+  normalizeBusinessHours,
+} from "@/lib/businessHours";
 
-type BeautyForm = {
+type AdminTab = "password" | "beauty" | "place" | "shop";
+
+type BeautyItem = {
+  id: string;
   name: string;
   brand: string;
-  function: string;
-  price_text: string;
-  price_level: string;
-  area: string;
-  type: string;
-  skin: string;
-  notesText: string;
+  shade?: string;
+  parts?: BeautyPart[];
+  note: string;
 };
 
-type FoodForm = {
+type PlaceItem = {
+  id: string;
   name: string;
   city: string;
   district: string;
   address: string;
-  price_text: string;
-  price_level: string;
-  hours: string;
-  style: string;
-  notesText: string;
-  google_maps_url: string;
-  google_place_id: string;
+  businessHours?: BusinessHours;
 };
 
-type PlaceForm = {
+type ShopItem = {
+  id: string;
   name: string;
   city: string;
   district: string;
   address: string;
-  price_text: string;
-  price_level: string;
-  hours: string;
-  category: string;
-  notesText: string;
-  google_maps_url: string;
-  google_place_id: string;
+  businessHours?: BusinessHours;
 };
 
-const inputClass =
-  "w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none";
-const sectionClass = "rounded-3xl bg-white p-6 shadow-sm space-y-4";
+const DEFAULT_BRANDS = [
+  "1028",
+  "3CE",
+  "CLIO",
+  "Dior",
+  "ETUDE",
+  "Fenty Beauty",
+  "heme",
+  "INTEGRATE",
+  "KATE",
+  "MAYBELLINE",
+  "NARS",
+  "rom&nd",
+  "Solone",
+];
 
-const initialBeauty: BeautyForm = {
-  name: "",
-  brand: "",
-  function: "",
-  price_text: "",
-  price_level: "",
-  area: "",
-  type: "",
-  skin: "",
-  notesText: "",
+const pageGridStyle: CSSProperties = {
+  display: "grid",
+  gap: 20,
 };
 
-const initialFood: FoodForm = {
-  name: "",
-  city: "",
-  district: "",
-  address: "",
-  price_text: "",
-  price_level: "",
-  hours: "",
-  style: "",
-  notesText: "",
-  google_maps_url: "",
-  google_place_id: "",
+const sectionCardStyle: CSSProperties = {
+  border: "1px solid #d9d9d9",
+  borderRadius: 14,
+  padding: 20,
+  background: "#fff",
+  boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
 };
 
-const initialPlace: PlaceForm = {
-  name: "",
-  city: "",
-  district: "",
-  address: "",
-  price_text: "",
-  price_level: "",
-  hours: "",
-  category: "",
-  notesText: "",
-  google_maps_url: "",
-  google_place_id: "",
+const dataCardStyle: CSSProperties = {
+  border: "1px solid #dcdcdc",
+  borderRadius: 12,
+  padding: 16,
+  background: "#fafafa",
+  display: "grid",
+  gap: 6,
 };
 
-function parseNotes(text: string) {
-  return text
-    .split(",")
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
+const tabButtonRowStyle: CSSProperties = {
+  display: "flex",
+  gap: 12,
+  flexWrap: "wrap",
+};
+
+const listBlockStyle: CSSProperties = {
+  display: "grid",
+  gap: 12,
+};
+
+const fieldGroupStyle: CSSProperties = {
+  display: "grid",
+  gap: 8,
+};
+
+const fieldLabelStyle: CSSProperties = {
+  margin: 0,
+  fontSize: 14,
+  fontWeight: 600,
+};
 
 export default function AdminPage() {
-  const [adminKey, setAdminKey] = useState("");
-  const [beauty, setBeauty] = useState<BeautyForm>(initialBeauty);
-  const [food, setFood] = useState<FoodForm>(initialFood);
-  const [place, setPlace] = useState<PlaceForm>(initialPlace);
+  const [activeTab, setActiveTab] = useState<AdminTab>("beauty");
 
-  const [beautyFile, setBeautyFile] = useState<File | null>(null);
-  const [foodFile, setFoodFile] = useState<File | null>(null);
-  const [placeFile, setPlaceFile] = useState<File | null>(null);
+  const [adminPassword, setAdminPassword] = useLocalStorage<string>(
+    "adminPassword",
+    ""
+  );
+  const [brands, setBrands] = useLocalStorage<string[]>(
+    "beautyBrands",
+    DEFAULT_BRANDS
+  );
+  const [beautyItems, setBeautyItems] = useLocalStorage<BeautyItem[]>(
+    "beautyItems",
+    []
+  );
+  const [placeItems, setPlaceItems] = useLocalStorage<PlaceItem[]>(
+    "placeItems",
+    []
+  );
+  const [shopItems, setShopItems] = useLocalStorage<ShopItem[]>(
+    "shopItems",
+    []
+  );
 
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState("");
+  const [passwordInput, setPasswordInput] = useState(adminPassword);
 
-  useEffect(() => {
-    const saved = localStorage.getItem("adminKey");
-    if (saved) setAdminKey(saved);
-  }, []);
+  const [beautyForm, setBeautyForm] = useState({
+    name: "",
+    brand: "",
+    shade: "",
+    parts: [] as BeautyPart[],
+    note: "",
+  });
 
-  function saveAdminKey() {
-    localStorage.setItem("adminKey", adminKey);
-    setMessage("管理密碼已暫存在此瀏覽器。");
-  }
+  const [placeForm, setPlaceForm] = useState({
+    name: "",
+    city: "",
+    district: "",
+    address: "",
+    businessHours: EMPTY_BUSINESS_HOURS,
+  });
 
-  async function uploadImage(file: File, folder: string) {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", folder);
+  const [shopForm, setShopForm] = useState({
+    name: "",
+    city: "",
+    district: "",
+    address: "",
+    businessHours: EMPTY_BUSINESS_HOURS,
+  });
 
-    const res = await fetch("/api/admin/upload", {
-      method: "POST",
-      headers: {
-        "x-admin-key": adminKey,
-      },
-      body: formData,
+  const sortedBrands = useMemo(
+    () => [...brands].sort((a, b) => a.localeCompare(b, "zh-Hant")),
+    [brands]
+  );
+
+  const addBrandIfNeeded = (newBrand: string) => {
+    const trimmed = newBrand.trim();
+    if (!trimmed) return;
+
+    const exists = brands.some(
+      (brand) => brand.toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (!exists) {
+      setBrands((prev) => [...prev, trimmed]);
+    }
+  };
+
+  const savePassword = () => {
+    setAdminPassword(passwordInput.trim());
+    alert("密碼已儲存");
+  };
+
+  const saveBeauty = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!beautyForm.name || !beautyForm.brand) {
+      alert("請完整填寫美妝資料");
+      return;
+    }
+
+    addBrandIfNeeded(beautyForm.brand);
+
+    const newItem: BeautyItem = {
+      id: crypto.randomUUID(),
+      name: beautyForm.name.trim(),
+      brand: beautyForm.brand.trim(),
+      shade: beautyForm.shade.trim(),
+      parts: beautyForm.parts,
+      note: beautyForm.note.trim(),
+    };
+
+    setBeautyItems((prev) => [newItem, ...prev]);
+    setBeautyForm({
+      name: "",
+      brand: "",
+      shade: "",
+      parts: [],
+      note: "",
     });
 
-    const data = await res.json();
+    alert("美妝資料已新增");
+  };
 
-    if (!res.ok) {
-      throw new Error(data.error || "圖片上傳失敗");
+  const savePlace = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (
+      !placeForm.name ||
+      !placeForm.city ||
+      !placeForm.district ||
+      !placeForm.address
+    ) {
+      alert("請完整填寫地點資料");
+      return;
     }
 
-    return data.publicUrl as string;
-  }
+    const newItem: PlaceItem = {
+      id: crypto.randomUUID(),
+      name: placeForm.name.trim(),
+      city: placeForm.city,
+      district: placeForm.district,
+      address: placeForm.address.trim(),
+      businessHours: normalizeBusinessHours(placeForm.businessHours),
+    };
 
-  async function createBeauty() {
-    setLoading("beauty");
-    setMessage("");
+    setPlaceItems((prev) => [newItem, ...prev]);
+    setPlaceForm({
+      name: "",
+      city: "",
+      district: "",
+      address: "",
+      businessHours: EMPTY_BUSINESS_HOURS,
+    });
 
-    try {
-      let image_url: string | null = null;
+    alert("地點資料已新增");
+  };
 
-      if (beautyFile) {
-        image_url = await uploadImage(beautyFile, "beauty");
-      }
+  const saveShop = (e: React.FormEvent) => {
+    e.preventDefault();
 
-      const res = await fetch("/api/admin/create-beauty", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-key": adminKey,
-        },
-        body: JSON.stringify({
-          ...beauty,
-          notes: parseNotes(beauty.notesText),
-          image_url,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "新增失敗");
-      }
-
-      setBeauty(initialBeauty);
-      setBeautyFile(null);
-      setMessage("美妝產品新增成功。");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "新增失敗");
-    } finally {
-      setLoading("");
+    if (
+      !shopForm.name ||
+      !shopForm.city ||
+      !shopForm.district ||
+      !shopForm.address
+    ) {
+      alert("請完整填寫店家資料");
+      return;
     }
-  }
 
-  async function createFood() {
-    setLoading("food");
-    setMessage("");
+    const newItem: ShopItem = {
+      id: crypto.randomUUID(),
+      name: shopForm.name.trim(),
+      city: shopForm.city,
+      district: shopForm.district,
+      address: shopForm.address.trim(),
+      businessHours: normalizeBusinessHours(shopForm.businessHours),
+    };
 
-    try {
-      let image_url: string | null = null;
+    setShopItems((prev) => [newItem, ...prev]);
+    setShopForm({
+      name: "",
+      city: "",
+      district: "",
+      address: "",
+      businessHours: EMPTY_BUSINESS_HOURS,
+    });
 
-      if (foodFile) {
-        image_url = await uploadImage(foodFile, "food");
-      }
+    alert("店家資料已新增");
+  };
 
-      const res = await fetch("/api/admin/create-food", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-key": adminKey,
-        },
-        body: JSON.stringify({
-          ...food,
-          notes: parseNotes(food.notesText),
-          image_url,
-        }),
-      });
+  const deleteBeauty = (id: string) => {
+    setBeautyItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
-      const data = await res.json();
+  const deletePlace = (id: string) => {
+    setPlaceItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
-      if (!res.ok) {
-        throw new Error(data.error || "新增失敗");
-      }
-
-      setFood(initialFood);
-      setFoodFile(null);
-      setMessage("店家新增成功。");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "新增失敗");
-    } finally {
-      setLoading("");
-    }
-  }
-
-  async function createPlace() {
-    setLoading("place");
-    setMessage("");
-
-    try {
-      let image_url: string | null = null;
-
-      if (placeFile) {
-        image_url = await uploadImage(placeFile, "places");
-      }
-
-      const res = await fetch("/api/admin/create-place", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-key": adminKey,
-        },
-        body: JSON.stringify({
-          ...place,
-          notes: parseNotes(place.notesText),
-          image_url,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "新增失敗");
-      }
-
-      setPlace(initialPlace);
-      setPlaceFile(null);
-      setMessage("景點新增成功。");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "新增失敗");
-    } finally {
-      setLoading("");
-    }
-  }
+  const deleteShop = (id: string) => {
+    setShopItems((prev) => prev.filter((item) => item.id !== id));
+  };
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-3xl bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold">管理頁 / Admin</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          這是 A 版：用管理密碼做簡易保護。之後可以再升級成正式登入。
-        </p>
+    <main style={{ maxWidth: 1100, margin: "0 auto", padding: 24 }}>
+      <div style={pageGridStyle}>
+        <h1 style={{ marginBottom: 0 }}>後台管理</h1>
 
-        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
-          <input
-            type="password"
-            value={adminKey}
-            onChange={(e) => setAdminKey(e.target.value)}
-            placeholder="輸入管理密碼"
-            className={inputClass}
-          />
-          <button
-            onClick={saveAdminKey}
-            className="rounded-2xl bg-slate-900 px-5 py-3 text-white"
-          >
-            儲存管理密碼
-          </button>
-        </div>
+        <section style={{ ...sectionCardStyle, display: "grid", gap: 16 }}>
+          <div style={tabButtonRowStyle}>
+            <button onClick={() => setActiveTab("password")}>儲存密碼</button>
+            <button onClick={() => setActiveTab("beauty")}>新增美妝</button>
+            <button onClick={() => setActiveTab("place")}>新增地點</button>
+            <button onClick={() => setActiveTab("shop")}>新增店家</button>
+          </div>
+        </section>
 
-        {message && (
-          <p className="mt-4 rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-700">
-            {message}
-          </p>
+        {activeTab === "password" && (
+          <section style={{ ...sectionCardStyle, display: "grid", gap: 12 }}>
+            <h2 style={{ margin: 0 }}>儲存密碼</h2>
+            <input
+              type="text"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="請輸入後台密碼"
+            />
+            <button onClick={savePassword}>儲存密碼</button>
+          </section>
         )}
-      </section>
 
-      <section className={sectionClass}>
-        <h2 className="text-xl font-semibold">新增美妝產品</h2>
+        {activeTab === "beauty" && (
+          <section style={{ ...sectionCardStyle, display: "grid", gap: 12 }}>
+            <h2 style={{ margin: 0 }}>新增美妝</h2>
+            <form onSubmit={saveBeauty} style={{ display: "grid", gap: 12 }}>
+              <input
+                value={beautyForm.name}
+                onChange={(e) =>
+                  setBeautyForm((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+                placeholder="美妝名稱"
+              />
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <input
-            className={inputClass}
-            placeholder="產品名稱"
-            value={beauty.name}
-            onChange={(e) => setBeauty({ ...beauty, name: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="品牌"
-            value={beauty.brand}
-            onChange={(e) => setBeauty({ ...beauty, brand: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="功能，例如保濕修護"
-            value={beauty.function}
-            onChange={(e) => setBeauty({ ...beauty, function: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="價位文字，例如 NT$780"
-            value={beauty.price_text}
-            onChange={(e) =>
-              setBeauty({ ...beauty, price_text: e.target.value })
-            }
-          />
-          <input
-            className={inputClass}
-            placeholder="價位分級，例如 平價 / 中價位"
-            value={beauty.price_level}
-            onChange={(e) =>
-              setBeauty({ ...beauty, price_level: e.target.value })
-            }
-          />
-          <input
-            className={inputClass}
-            placeholder="使用部位，例如 臉部"
-            value={beauty.area}
-            onChange={(e) => setBeauty({ ...beauty, area: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="類型，例如 精華液"
-            value={beauty.type}
-            onChange={(e) => setBeauty({ ...beauty, type: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="適合膚質，例如 敏感肌"
-            value={beauty.skin}
-            onChange={(e) => setBeauty({ ...beauty, skin: e.target.value })}
-          />
-        </div>
+              <div style={fieldGroupStyle}>
+                <p style={fieldLabelStyle}>品牌</p>
+                <BrandInput
+                  value={beautyForm.brand}
+                  brands={sortedBrands}
+                  onChange={(value) =>
+                    setBeautyForm((prev) => ({ ...prev, brand: value }))
+                  }
+                  onAddBrand={addBrandIfNeeded}
+                  placeholder="請輸入或選擇品牌"
+                />
+              </div>
 
-        <textarea
-          className={`${inputClass} min-h-[110px]`}
-          placeholder="標籤，用逗號分隔，例如 清爽, 低刺激, 回購高"
-          value={beauty.notesText}
-          onChange={(e) => setBeauty({ ...beauty, notesText: e.target.value })}
-        />
+              <div style={fieldGroupStyle}>
+                <p style={fieldLabelStyle}>色號</p>
+                <input
+                  value={beautyForm.shade}
+                  onChange={(e) =>
+                    setBeautyForm((prev) => ({
+                      ...prev,
+                      shade: e.target.value,
+                    }))
+                  }
+                  placeholder="可直接輸入色號，例如 N21、#05、BR401"
+                />
+              </div>
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setBeautyFile(e.target.files?.[0] || null)}
-        />
+              <div style={fieldGroupStyle}>
+                <p style={fieldLabelStyle}>使用部位</p>
+                <BeautyPartSelector
+                  value={beautyForm.parts}
+                  onChange={(value) =>
+                    setBeautyForm((prev) => ({ ...prev, parts: value }))
+                  }
+                />
+              </div>
 
-        <button
-          onClick={createBeauty}
-          disabled={!adminKey || loading === "beauty"}
-          className="rounded-2xl bg-slate-900 px-5 py-3 text-white disabled:opacity-50"
-        >
-          {loading === "beauty" ? "新增中..." : "新增美妝產品"}
-        </button>
-      </section>
+              <input
+                value={beautyForm.note}
+                onChange={(e) =>
+                  setBeautyForm((prev) => ({
+                    ...prev,
+                    note: e.target.value,
+                  }))
+                }
+                placeholder="備註（可選）"
+              />
 
-      <section className={sectionClass}>
-        <h2 className="text-xl font-semibold">新增店家</h2>
+              <button type="submit">儲存美妝資料</button>
+            </form>
+          </section>
+        )}
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <input
-            className={inputClass}
-            placeholder="店名"
-            value={food.name}
-            onChange={(e) => setFood({ ...food, name: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="城市"
-            value={food.city}
-            onChange={(e) => setFood({ ...food, city: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="地區"
-            value={food.district}
-            onChange={(e) => setFood({ ...food, district: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="地址"
-            value={food.address}
-            onChange={(e) => setFood({ ...food, address: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="價位文字，例如 NT$250–450"
-            value={food.price_text}
-            onChange={(e) =>
-              setFood({ ...food, price_text: e.target.value })
-            }
-          />
-          <input
-            className={inputClass}
-            placeholder="價位分級，例如 平價 / 中價位"
-            value={food.price_level}
-            onChange={(e) =>
-              setFood({ ...food, price_level: e.target.value })
-            }
-          />
-          <input
-            className={inputClass}
-            placeholder="營業時間"
-            value={food.hours}
-            onChange={(e) => setFood({ ...food, hours: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="風格，例如 日式定食"
-            value={food.style}
-            onChange={(e) => setFood({ ...food, style: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="Google Maps 分享連結（建議填）"
-            value={food.google_maps_url}
-            onChange={(e) =>
-              setFood({ ...food, google_maps_url: e.target.value })
-            }
-          />
-          <input
-            className={inputClass}
-            placeholder="Google Place ID（可選，但最穩）"
-            value={food.google_place_id}
-            onChange={(e) =>
-              setFood({ ...food, google_place_id: e.target.value })
-            }
-          />
-        </div>
+        {activeTab === "place" && (
+          <section style={{ ...sectionCardStyle, display: "grid", gap: 12 }}>
+            <h2 style={{ margin: 0 }}>新增地點</h2>
+            <form onSubmit={savePlace} style={{ display: "grid", gap: 12 }}>
+              <input
+                value={placeForm.name}
+                onChange={(e) =>
+                  setPlaceForm((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+                placeholder="地點名稱"
+              />
 
-        <textarea
-          className={`${inputClass} min-h-[110px]`}
-          placeholder="標籤，用逗號分隔，例如 適合聚餐, 可訂位, 晚餐熱門"
-          value={food.notesText}
-          onChange={(e) => setFood({ ...food, notesText: e.target.value })}
-        />
+              <CityDistrictSelector
+                city={placeForm.city}
+                district={placeForm.district}
+                onCityChange={(value) =>
+                  setPlaceForm((prev) => ({
+                    ...prev,
+                    city: value,
+                    district: "",
+                  }))
+                }
+                onDistrictChange={(value) =>
+                  setPlaceForm((prev) => ({ ...prev, district: value }))
+                }
+              />
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setFoodFile(e.target.files?.[0] || null)}
-        />
+              <input
+                value={placeForm.address}
+                onChange={(e) =>
+                  setPlaceForm((prev) => ({
+                    ...prev,
+                    address: e.target.value,
+                  }))
+                }
+                placeholder="地址"
+              />
 
-        <button
-          onClick={createFood}
-          disabled={!adminKey || loading === "food"}
-          className="rounded-2xl bg-slate-900 px-5 py-3 text-white disabled:opacity-50"
-        >
-          {loading === "food" ? "新增中..." : "新增店家"}
-        </button>
-      </section>
+              <BusinessHoursEditor
+                value={placeForm.businessHours}
+                onChange={(value) =>
+                  setPlaceForm((prev) => ({
+                    ...prev,
+                    businessHours: value,
+                  }))
+                }
+              />
 
-      <section className={sectionClass}>
-        <h2 className="text-xl font-semibold">新增景點</h2>
+              <button type="submit">儲存地點資料</button>
+            </form>
+          </section>
+        )}
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <input
-            className={inputClass}
-            placeholder="景點名稱"
-            value={place.name}
-            onChange={(e) => setPlace({ ...place, name: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="城市"
-            value={place.city}
-            onChange={(e) => setPlace({ ...place, city: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="地區"
-            value={place.district}
-            onChange={(e) => setPlace({ ...place, district: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="地址"
-            value={place.address}
-            onChange={(e) => setPlace({ ...place, address: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="價位文字，例如 免費 / NT$120"
-            value={place.price_text}
-            onChange={(e) =>
-              setPlace({ ...place, price_text: e.target.value })
-            }
-          />
-          <input
-            className={inputClass}
-            placeholder="價位分級，例如 免費 / 低價位"
-            value={place.price_level}
-            onChange={(e) =>
-              setPlace({ ...place, price_level: e.target.value })
-            }
-          />
-          <input
-            className={inputClass}
-            placeholder="開放時間"
-            value={place.hours}
-            onChange={(e) => setPlace({ ...place, hours: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="性質，例如 博物館 / 步道"
-            value={place.category}
-            onChange={(e) => setPlace({ ...place, category: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="Google Maps 分享連結（建議填）"
-            value={place.google_maps_url}
-            onChange={(e) =>
-              setPlace({ ...place, google_maps_url: e.target.value })
-            }
-          />
-          <input
-            className={inputClass}
-            placeholder="Google Place ID（可選，但最穩）"
-            value={place.google_place_id}
-            onChange={(e) =>
-              setPlace({ ...place, google_place_id: e.target.value })
-            }
-          />
-        </div>
+        {activeTab === "shop" && (
+          <section style={{ ...sectionCardStyle, display: "grid", gap: 12 }}>
+            <h2 style={{ margin: 0 }}>新增店家</h2>
+            <form onSubmit={saveShop} style={{ display: "grid", gap: 12 }}>
+              <input
+                value={shopForm.name}
+                onChange={(e) =>
+                  setShopForm((prev) => ({
+                    ...prev,
+                    name: e.target.value,
+                  }))
+                }
+                placeholder="店家名稱"
+              />
 
-        <textarea
-          className={`${inputClass} min-h-[110px]`}
-          placeholder="標籤，用逗號分隔，例如 室內, 雨天可去, 展覽型"
-          value={place.notesText}
-          onChange={(e) => setPlace({ ...place, notesText: e.target.value })}
-        />
+              <CityDistrictSelector
+                city={shopForm.city}
+                district={shopForm.district}
+                onCityChange={(value) =>
+                  setShopForm((prev) => ({
+                    ...prev,
+                    city: value,
+                    district: "",
+                  }))
+                }
+                onDistrictChange={(value) =>
+                  setShopForm((prev) => ({ ...prev, district: value }))
+                }
+              />
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setPlaceFile(e.target.files?.[0] || null)}
-        />
+              <input
+                value={shopForm.address}
+                onChange={(e) =>
+                  setShopForm((prev) => ({
+                    ...prev,
+                    address: e.target.value,
+                  }))
+                }
+                placeholder="地址"
+              />
 
-        <button
-          onClick={createPlace}
-          disabled={!adminKey || loading === "place"}
-          className="rounded-2xl bg-slate-900 px-5 py-3 text-white disabled:opacity-50"
-        >
-          {loading === "place" ? "新增中..." : "新增景點"}
-        </button>
-      </section>
-    </div>
+              <BusinessHoursEditor
+                value={shopForm.businessHours}
+                onChange={(value) =>
+                  setShopForm((prev) => ({
+                    ...prev,
+                    businessHours: value,
+                  }))
+                }
+              />
+
+              <button type="submit">儲存店家資料</button>
+            </form>
+          </section>
+        )}
+
+        <section style={{ ...sectionCardStyle, display: "grid", gap: 24 }}>
+          <h2 style={{ margin: 0 }}>目前資料</h2>
+
+          <div style={listBlockStyle}>
+            <h3 style={{ margin: 0 }}>美妝資料</h3>
+            {beautyItems.length === 0 ? (
+              <p style={{ margin: 0 }}>目前沒有美妝資料</p>
+            ) : (
+              beautyItems.map((item) => (
+                <div key={item.id} style={dataCardStyle}>
+                  <p style={{ margin: 0 }}>
+                    <strong>{item.name}</strong>
+                  </p>
+                  <p style={{ margin: 0 }}>品牌：{item.brand}</p>
+                  <p style={{ margin: 0 }}>色號：{item.shade?.trim() || "—"}</p>
+                  <p style={{ margin: 0 }}>
+                    使用部位：
+                    {item.parts && item.parts.length > 0
+                      ? item.parts.join("、")
+                      : "—"}
+                  </p>
+                  <p style={{ margin: 0 }}>備註：{item.note || "—"}</p>
+                  <div>
+                    <button onClick={() => deleteBeauty(item.id)}>刪除</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div style={listBlockStyle}>
+            <h3 style={{ margin: 0 }}>地點資料</h3>
+            {placeItems.length === 0 ? (
+              <p style={{ margin: 0 }}>目前沒有地點資料</p>
+            ) : (
+              placeItems.map((item) => (
+                <div key={item.id} style={dataCardStyle}>
+                  <p style={{ margin: 0 }}>
+                    <strong>{item.name}</strong>
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    地區：{item.city} {item.district}
+                  </p>
+                  <p style={{ margin: 0 }}>地址：{item.address}</p>
+
+                  <div>
+                    <strong>營業時間：</strong>
+                    {formatBusinessHours(item.businessHours).length > 0 ? (
+                      <div style={{ marginTop: 6 }}>
+                        {formatBusinessHours(item.businessHours).map((line) => (
+                          <p key={line} style={{ margin: "4px 0" }}>
+                            {line}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <span> 未填寫</span>
+                    )}
+                  </div>
+
+                  <div>
+                    <button onClick={() => deletePlace(item.id)}>刪除</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div style={listBlockStyle}>
+            <h3 style={{ margin: 0 }}>店家資料</h3>
+            {shopItems.length === 0 ? (
+              <p style={{ margin: 0 }}>目前沒有店家資料</p>
+            ) : (
+              shopItems.map((item) => (
+                <div key={item.id} style={dataCardStyle}>
+                  <p style={{ margin: 0 }}>
+                    <strong>{item.name}</strong>
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    地區：{item.city} {item.district}
+                  </p>
+                  <p style={{ margin: 0 }}>地址：{item.address}</p>
+
+                  <div>
+                    <strong>營業時間：</strong>
+                    {formatBusinessHours(item.businessHours).length > 0 ? (
+                      <div style={{ marginTop: 6 }}>
+                        {formatBusinessHours(item.businessHours).map((line) => (
+                          <p key={line} style={{ margin: "4px 0" }}>
+                            {line}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <span> 未填寫</span>
+                    )}
+                  </div>
+
+                  <div>
+                    <button onClick={() => deleteShop(item.id)}>刪除</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
