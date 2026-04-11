@@ -1,18 +1,41 @@
-這次要覆蓋 / 新增的檔案：
+# 首頁改版安裝方式
 
-1. app/admin/page.tsx
-   - 請用 app-admin/page.tsx 的內容覆蓋你目前的後台 page.tsx
+請覆蓋以下檔案：
 
-2. components/BrandInput.tsx
-   - 直接覆蓋既有 BrandInput
+- `app/page.tsx`
+- `app/home-page.module.css`
 
-3. components/BeautyPartSelector.tsx
-   - 新增這個元件檔
+## 你還要做的 2 件事
 
-功能更新：
-- 品牌可直接打字過濾
-- 已有品牌可用標籤點選
-- 沒有的品牌可直接新增
-- 新增色號欄位
-- 新增使用部位複選標籤：Hair / Face / Eyes / Lips / Skincare
-- 後台目前資料區會顯示色號與使用部位
+### 1. 放首頁背景圖
+把你真正想用的首圖放到：
+
+- `public/images/home-hero.jpg`
+
+目前程式碼會自動讀這張圖。
+
+### 2. 修改按鈕連結
+`app/page.tsx` 裡有這段：
+
+```ts
+const NAV_ITEMS = [
+  { label: "美妝保養", href: "/beauty" },
+  { label: "服飾品牌", href: "/brands" },
+  { label: "美食地圖", href: "/food-map" },
+  { label: "景點收藏", href: "/favorites" },
+];
+```
+
+把 `href` 改成你專案裡真正存在的頁面路由。
+
+## 目前已經做好的效果
+
+- 首屏是滿版首頁視覺
+- 可以往下滑到按鈕區
+- 首屏有「往下探索」按鈕
+- 滾動超過首屏後，頂部導覽列才會出現
+- 第二區塊版面接近你傳的參考圖
+- 按鈕有大圓角、右側白色箭頭圓鈕
+
+## 想再更像你圖片的話
+你再把目前前台的原始碼傳給我，我可以再直接幫你接進你原本的字體、間距、按鈕樣式和真實路由。

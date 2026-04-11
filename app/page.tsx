@@ -1,24 +1,115 @@
-import { CategoryLinks } from "@/components/category-links";
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import styles from "./home-page.module.css";
+
+type NavItem = {
+  label: string;
+  href: string;
+};
+
+const NAV_ITEMS: NavItem[] = [
+  { label: "美妝保養", href: "/beauty" },
+  { label: "服飾品牌", href: "/brands" },
+  { label: "美食地圖", href: "/food-map" },
+  { label: "景點收藏", href: "/favorites" },
+];
+
+function FloatingHeader({ visible }: { visible: boolean }) {
+  return (
+    <header
+      className={`${styles.header} ${visible ? styles.headerVisible : styles.headerHidden}`}
+    >
+      <div className={styles.headerInner}>
+        <button
+          type="button"
+          className={styles.brandButton}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        >
+          My Everyday Life Collection
+        </button>
+
+        <nav className={styles.headerNav} aria-label="首頁導覽">
+          {NAV_ITEMS.map((item) => (
+            <Link key={item.label} href={item.href} className={styles.headerLink}>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function DestinationCard() {
+  return (
+    <div className={styles.destinationCard}>
+      {NAV_ITEMS.map((item) => (
+        <Link key={item.label} href={item.href} className={styles.destinationButton}>
+          <span className={styles.destinationLabel}>{item.label}</span>
+          <span className={styles.destinationArrow} aria-hidden="true">
+            →
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default function HomePage() {
+  const [showHeader, setShowHeader] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const threshold = Math.max(window.innerHeight * 0.72, 320);
+      setShowHeader(window.scrollY > threshold);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <div className="space-y-10">
-      <section className="rounded-[2rem] bg-white p-8 shadow-sm md:p-12">
-        <p className="mb-3 text-sm font-medium text-slate-500">
-          生活資料整理平台
-        </p>
-        <h1 className="max-w-3xl text-3xl font-semibold leading-tight md:text-5xl">
-          把美妝、美食地圖與景點，
-          <br className="hidden md:block" />
-          整理成一個可持續更新、可快速搜尋、可直接導航的網站
-        </h1>
-        <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
-          第一版先聚焦在穩定上線與持續更新。你可以直接在 Supabase
-          後台新增資料，網站會自動同步顯示。
-        </p>
+    <main className={styles.page}>
+      <FloatingHeader visible={showHeader} />
+
+      <section className={styles.heroSection}>
+        <div className={styles.heroOverlay} />
+        <div className={styles.heroContent}>
+          <h1 className={styles.heroTitle}>My Everyday Life Collection</h1>
+          <p className={styles.heroSubtitle}>by Amino</p>
+          <button
+            type="button"
+            className={styles.scrollHint}
+            onClick={() => {
+              const element = document.getElementById("destination-section");
+              element?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            往下探索
+          </button>
+        </div>
       </section>
 
-      <CategoryLinks />
-    </div>
+      <section id="destination-section" className={styles.destinationSection}>
+        <div className={styles.destinationInner}>
+          <div className={styles.destinationIntro}>
+            <p className={styles.eyebrow}>My Everyday Life Collection</p>
+            <h2 className={styles.destinationTitle}>
+              Choose
+              <br />
+              Your
+              <br />
+              Destination
+            </h2>
+          </div>
+
+          <DestinationCard />
+        </div>
+      </section>
+    </main>
   );
 }

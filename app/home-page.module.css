@@ -1,0 +1,271 @@
+.page {
+  background: #f4f1e8;
+  color: #f8f5ed;
+}
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  transition: transform 240ms ease, opacity 240ms ease;
+  padding: 16px 20px;
+}
+
+.headerHidden {
+  opacity: 0;
+  transform: translateY(-18px);
+  pointer-events: none;
+}
+
+.headerVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.headerInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 999px;
+  background: rgba(45, 43, 17, 0.68);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18);
+}
+
+.brandButton {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #f9f5ea;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.headerNav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.headerLink {
+  color: #faf6ee;
+  text-decoration: none;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  transition: background 180ms ease, color 180ms ease;
+}
+
+.headerLink:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.heroSection {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  background-image:
+    linear-gradient(rgba(34, 32, 12, 0.18), rgba(34, 32, 12, 0.28)),
+    url("/images/home-hero.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.24));
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+  padding: 32px 24px;
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: clamp(3rem, 6vw, 5.5rem);
+  line-height: 1.06;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+}
+
+.heroSubtitle {
+  margin: 0;
+  font-size: clamp(1.2rem, 2vw, 2rem);
+  font-weight: 300;
+}
+
+.scrollHint {
+  margin: 22px auto 0;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fffdf8;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 180ms ease, transform 180ms ease;
+}
+
+.scrollHint:hover {
+  background: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.destinationSection {
+  background: #74713a;
+  padding: 82px 24px 96px;
+}
+
+.destinationInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.95fr) minmax(340px, 1fr);
+  align-items: center;
+  gap: 48px;
+}
+
+.destinationIntro {
+  display: grid;
+  gap: 20px;
+}
+
+.eyebrow {
+  margin: 0;
+  color: rgba(251, 248, 238, 0.92);
+  font-size: 1rem;
+}
+
+.destinationTitle {
+  margin: 0;
+  font-size: clamp(3rem, 6vw, 5.4rem);
+  line-height: 0.95;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+}
+
+.destinationCard {
+  border-radius: 34px;
+  border: 1.5px solid rgba(255, 252, 244, 0.78);
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+}
+
+.destinationButton {
+  min-height: 94px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 18px 18px 28px;
+  border-radius: 999px;
+  background: #25240b;
+  color: #faf7ef;
+  text-decoration: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.destinationButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.16);
+}
+
+.destinationLabel {
+  font-size: clamp(1.4rem, 2.4vw, 2.1rem);
+  letter-spacing: 0.03em;
+}
+
+.destinationArrow {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #f7f3eb;
+  color: #191808;
+  font-size: 2.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 900px) {
+  .headerInner {
+    border-radius: 24px;
+    padding: 14px 16px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .destinationInner {
+    grid-template-columns: 1fr;
+  }
+
+  .destinationTitle {
+    line-height: 1;
+  }
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: 12px;
+  }
+
+  .headerNav {
+    gap: 6px;
+  }
+
+  .headerLink {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+  }
+
+  .heroTitle {
+    font-size: clamp(2.4rem, 10vw, 4rem);
+  }
+
+  .destinationSection {
+    padding: 56px 16px 72px;
+  }
+
+  .destinationCard {
+    padding: 16px;
+    border-radius: 26px;
+    gap: 12px;
+  }
+
+  .destinationButton {
+    min-height: 78px;
+    padding: 12px 14px 12px 18px;
+  }
+
+  .destinationLabel {
+    font-size: 1.2rem;
+  }
+
+  .destinationArrow {
+    width: 56px;
+    height: 56px;
+    font-size: 2rem;
+  }
+}
